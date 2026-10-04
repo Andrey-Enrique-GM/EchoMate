@@ -1,0 +1,15 @@
+﻿#-- Character Settings --
+START_CHAR=GoldShip
+
+#-- Visual & Effects Settings --
+SPRITE_FRAMERATE=60
+
+#-- Movement Settings --
+FOLLOW_RADIUS=100.0
+RANDOM_MOVE_DISTANCE=120
+
+#-- Character Actions & Autonomy --
+ALLOW_RANDOM_ACTIONS=true
+MIN_INTERVAL=20
+MAX_INTERVAL=40
+SLEEP_TIME=400
