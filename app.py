@@ -27,6 +27,8 @@ def toggle_chat():
     else:
         chat_win.update_position()
         chat_win.show()
+        chat_win.activateWindow()
+        chat_win.input_field.setFocus()
 
 
 def switch_character(app, new_char_name):
