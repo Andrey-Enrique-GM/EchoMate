@@ -5,17 +5,33 @@ from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PyQt6.QtGui import QIcon, QPixmap
 from core.character import Character
 from core.window import PetWindow
+from core.chat_window import ChatWindow
+
 
 
 # Variables globales para gestionar la ventana e icono activo
 window = None
+chat_win = None
 tray = None
 cfg = None
 
 
+def toggle_chat():
+    """ Abre o cierra/oculta la ventana de chat al lado del personaje """
+    global chat_win, window
+    if chat_win is None:
+        chat_win = ChatWindow(parent_window=window)
+    
+    if chat_win.isVisible():
+        chat_win.hide()
+    else:
+        chat_win.update_position()
+        chat_win.show()
+
+
 def switch_character(app, new_char_name):
     """ Cambia el personaje activo y actualiza la ventana """
-    global window, tray, cfg
+    global window, tray, cfg, chat_win
 
     if window and window.character.name.lower() == new_char_name.lower():
         return
@@ -32,6 +48,10 @@ def switch_character(app, new_char_name):
     character = Character(character_name=new_char_name)
     window = PetWindow(character)
     window.show()
+
+    # Actualizar la referencia del parent en chat_win si ya existe
+    if chat_win:
+        chat_win.parent_window = window
 
     # Actualizar icono y tooltip en la barra de tareas
     update_tray_icon(character)
@@ -50,13 +70,19 @@ def update_tray_icon(character):
         icon_pixmap = full_pixmap.copy(0, 0, idle_data["frame_width"], idle_data["frame_height"])
         tray.setIcon(QIcon(icon_pixmap))
     
-    tray.setToolTip(f"PyMate - {character.name}")
+    tray.setToolTip(f"EchoMate - {character.name}")
 
 
 def setup_tray_menu(app):
     """ Crea el menú contextual exclusivo para el Tray Icon """
     global window
     menu = QMenu()
+
+    # Acción superior para Abrir/Cerrar el Chat
+    chat_action = menu.addAction("Chat")
+    chat_action.triggered.connect(toggle_chat)
+
+    menu.addSeparator()
 
     # Submenú de selección de personajes en assets/SpriteSheet
     char_submenu = menu.addMenu("Cambiar personaje")

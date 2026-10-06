@@ -107,7 +107,7 @@ class PetWindow(QWidget):
 
 
     def set_state(self, new_state: str):
-        """ Cambia el estado de la mascota y reproduce el sonido correspondiente """
+        """ Cambia el estado del personaje y reproduce el sonido correspondiente """
         if self.current_state == new_state:
             return
             
@@ -139,7 +139,7 @@ class PetWindow(QWidget):
 
 
     def update_animation(self):
-        """ Actualiza la animación de la mascota """
+        """ Actualiza la animación del personaje """
         if self.current_state == "idle":
             pixmap = self.idle_animator.get_next_frame()
         else:
@@ -198,7 +198,7 @@ class PetWindow(QWidget):
 
 
     def follow_cursor(self):
-        """ Mueve a la mascota y actualiza su animación según la distancia al cursor """
+        """ Mueve al personaje y actualiza su animación según la distancia al cursor """
         if not self.is_following or self.current_state in ["intro", "outro"]:
             return
 
