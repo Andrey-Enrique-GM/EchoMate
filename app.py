@@ -6,6 +6,7 @@ from PyQt6.QtGui import QIcon, QPixmap
 from core.character import Character
 from core.window import PetWindow
 from core.chat_window import ChatWindow
+from core.groq_client import GroqEngine
 
 
 
@@ -13,22 +14,26 @@ from core.chat_window import ChatWindow
 window = None
 chat_win = None
 tray = None
-cfg = None
+
+# Cargar la configuración y la clave desde .env
+cfg = ConfigManager()
+groq_engine = GroqEngine(api_key=cfg.groq_api_key)
 
 
 def toggle_chat():
     """ Abre o cierra/oculta la ventana de chat al lado del personaje """
-    global chat_win, window
+    global chat_win, window, cfg, groq_engine
     if chat_win is None:
-        chat_win = ChatWindow(parent_window=window)
+        chat_win = ChatWindow(
+            parent_window=window, 
+            config_manager=cfg, 
+            groq_engine=groq_engine
+        )
     
     if chat_win.isVisible():
         chat_win.hide()
     else:
-        chat_win.update_position()
         chat_win.show()
-        chat_win.activateWindow()
-        chat_win.input_field.setFocus()
 
 
 def switch_character(app, new_char_name):
@@ -118,6 +123,7 @@ def main():
 
     cfg = ConfigManager()
     character = Character(character_name=cfg.active_character)
+    groq_engine = GroqEngine(api_key=cfg.groq_api_key)
     
     window = PetWindow(character)
     window.show()

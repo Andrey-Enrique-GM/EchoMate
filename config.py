@@ -1,5 +1,9 @@
 import os
 import sys
+from dotenv import load_dotenv, set_key
+
+# Cargar variables del entorno desde .env al iniciar la aplicación
+load_dotenv()
 
 
 
@@ -17,11 +21,17 @@ class ConfigManager:
             
         self.assets_path = base_assets_path
         self.config_file = os.path.join(self.assets_path, "config.txt")
+        self.env_path = os.path.join(os.path.dirname(self.assets_path), ".env")
+        
         self.global_config = {}
         self.character_config = {}
         
         self._load_global_config()
         self.active_character = self.global_config.get("START_CHAR", "GoldShip")
+        
+        # Leer la API Key directamente del entorno (.env)
+        self.groq_api_key = os.getenv("GROQ_API_KEY", "")
+        
         self._load_character_config()
 
 
@@ -58,9 +68,7 @@ class ConfigManager:
         """ Actualiza la variable en memoria y sobreescribe START_CHAR en assets/config.txt """
         self.active_character = char_name
         self.global_config["START_CHAR"] = char_name
-        self._load_character_config()
-
-        # Guardar en el archivo assets/config.txt manteniendo el formato
+        
         if os.path.exists(self.config_file):
             lines = []
             updated = False
@@ -77,6 +85,15 @@ class ConfigManager:
 
             with open(self.config_file, "w", encoding="utf-8") as f:
                 f.writelines(lines)
+                
+        self._load_character_config()
+
+
+    def set_groq_api_key(self, api_key: str):
+        """ Guarda la clave de Groq en memoria y la escribe en el archivo .env """
+        self.groq_api_key = api_key
+        # Actualiza o crea la variable en el archivo .env
+        set_key(self.env_path, "GROQ_API_KEY", api_key)
 
 
 def load_sleep_time():
