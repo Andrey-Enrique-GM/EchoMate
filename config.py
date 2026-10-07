@@ -29,7 +29,7 @@ class ConfigManager:
         self._load_global_config()
         self.active_character = self.global_config.get("START_CHAR", "GoldShip")
         
-        # Leer la API Key directamente del entorno (.env)
+        # Leer la API Key EXCLUSIVAMENTE del archivo .env
         self.groq_api_key = os.getenv("GROQ_API_KEY", "")
         
         self._load_character_config()
@@ -90,9 +90,9 @@ class ConfigManager:
 
 
     def set_groq_api_key(self, api_key: str):
-        """ Guarda la clave de Groq en memoria y la escribe en el archivo .env """
+        """ Guarda la clave de Groq ÚNICAMENTE en la variable de entorno y en el archivo .env """
         self.groq_api_key = api_key
-        # Actualiza o crea la variable en el archivo .env
+        # Escribe de forma limpia dentro del archivo .env en la raíz
         set_key(self.env_path, "GROQ_API_KEY", api_key)
 
 
@@ -104,7 +104,9 @@ def load_sleep_time():
                 line = line.strip()
                 if line.startswith("SLEEP_TIME"):
                     try:
-                        return int(line.split("=")[1].strip())
-                    except ValueError:
+                        # Se obtiene solo el valor numérico antes de cualquier caracter extraño
+                        val_str = line.split("=")[1].strip()
+                        return int(''.join(filter(str.isdigit, val_str)))
+                    except (ValueError, IndexError):
                         pass
     return 400  # Valor por defecto si no lo encuentra
