@@ -12,7 +12,7 @@ class MessageInputEdit(QTextEdit):
     def __init__(self, parent_chat=None):
         super().__init__()
         self.parent_chat = parent_chat
-        self.setPlaceholderText("Escribe tu respuesta aquí...")
+        self.setPlaceholderText("Escribe aquí...")
         
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -183,7 +183,7 @@ class ChatWindow(QWidget):
 
         self.clear_btn = QPushButton("🗑")
         self.clear_btn.setProperty("class", "header_icon_btn")
-        self.clear_btn.setToolTip("Reiniciar conversación / Borrar memoria")
+        self.clear_btn.setToolTip("Reiniciar")
         self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.clear_btn.clicked.connect(self.clear_chat_context)
 

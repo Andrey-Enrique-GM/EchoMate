@@ -8,10 +8,13 @@ load_dotenv()
 
 
 def get_base_dir():
-    """ Devuelve la ruta base, ya sea ejecutando script .py o el .exe empaquetado """
+    """ Devuelve la ruta base real, compatible con PyInstaller --onedir y --onefile """
     if getattr(sys, 'frozen', False):
+        # Si viene compilado por PyInstaller, busca en la carpeta del ejecutable o en _MEIPASS
+        if hasattr(sys, '_MEIPASS'):
+            return sys._MEIPASS
         return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.abspath(__file__))
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class ConfigManager:
