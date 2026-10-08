@@ -82,14 +82,14 @@ class ChatWindow(QWidget):
                 font-weight: 600;
                 font-size: 14px;
             }
-            #settings_btn {
+            .header_icon_btn {
                 background-color: transparent;
                 border: none;
                 color: #A0AEC0;
-                font-size: 16px;
+                font-size: 15px;
                 padding: 2px 6px;
             }
-            #settings_btn:hover {
+            .header_icon_btn:hover {
                 color: #FFFFFF;
             }
 
@@ -181,13 +181,21 @@ class ChatWindow(QWidget):
         title_label = QLabel("EchoMate")
         title_label.setObjectName("header_title")
 
+        self.clear_btn = QPushButton("🗑")
+        self.clear_btn.setProperty("class", "header_icon_btn")
+        self.clear_btn.setToolTip("Reiniciar conversación / Borrar memoria")
+        self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.clear_btn.clicked.connect(self.clear_chat_context)
+
         self.settings_btn = QPushButton("⚙")
-        self.settings_btn.setObjectName("settings_btn")
+        self.settings_btn.setProperty("class", "header_icon_btn")
+        self.settings_btn.setToolTip("Ajustes de API Key")
         self.settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_btn.clicked.connect(self.toggle_settings)
 
         header_layout.addWidget(title_label)
         header_layout.addStretch()
+        header_layout.addWidget(self.clear_btn)
         header_layout.addWidget(self.settings_btn)
         main_layout.addWidget(header_frame)
 
@@ -264,6 +272,15 @@ class ChatWindow(QWidget):
             self.stack.setCurrentIndex(1)
         else:
             self.stack.setCurrentIndex(0)
+
+
+    def clear_chat_context(self):
+        """ Limpia el contexto de la conversación en el motor y en la pantalla """
+        if self.groq_engine:
+            self.groq_engine.clear_history()
+        self.chat_history.clear()
+        char_name = self.parent_window.character.name if self.parent_window else "EchoMate"
+        self.add_bot_response(char_name, "¡Memoria del chat borrada! ¿De qué quieres hablar ahora?")
 
 
     def save_api_key(self):
