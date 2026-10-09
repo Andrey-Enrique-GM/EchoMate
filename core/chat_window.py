@@ -1,10 +1,24 @@
-import sys
+import os
+import re
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QTextEdit, QPushButton, QFrame, QLineEdit, QStackedWidget
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtGui import QPixmap
 
+
+def parse_markdown_to_html(text: str) -> str:
+    """ Convierte sintaxis básica de Markdown (**bold**, *italic*, `code`) a HTML """
+    # Reemplazar saltos de línea por <br>
+    formatted = text.replace('\n', '<br>')
+    # Bold **text**
+    formatted = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', formatted)
+    # Italic *text*
+    formatted = re.sub(r'\*(.*?)\*', r'<i>\1</i>', formatted)
+    # Inline Code `code`
+    formatted = re.sub(r'`(.*?)`', r'<code style="background-color: #2D3446; padding: 2px 4px; border-radius: 4px;">\1</code>', formatted)
+    return formatted
 
 
 class MessageInputEdit(QTextEdit):
@@ -52,10 +66,13 @@ class ChatWindow(QWidget):
         self.parent_window = parent_window
         self.cfg = config_manager
         self.groq_engine = groq_engine
+        
+        # Para el arrastre de ventana sin bordes
+        self._drag_pos = QPoint()
 
-        # Flags: Ventana tipo Tool (sin barra de tareas) + StaysOnTop
+        # Flags: Sin bordes de ventana + Tool (sin barra de tareas) + StaysOnTop
         self.setWindowFlags(
-            Qt.WindowType.Window | 
+            Qt.WindowType.FramelessWindowHint | 
             Qt.WindowType.Tool | 
             Qt.WindowType.WindowStaysOnTopHint
         )
@@ -72,9 +89,17 @@ class ChatWindow(QWidget):
                 font-size: 13px;
             }
             
+            /* Contenedor principal con borde suave para compensar la falta de marco */
+            #main_container {
+                border: 1px solid #232836;
+                border-radius: 8px;
+            }
+
             #header_frame {
                 background-color: #111319;
                 border-bottom: 1px solid #232836;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
                 padding: 4px 8px;
             }
             #header_title {
@@ -86,11 +111,14 @@ class ChatWindow(QWidget):
                 background-color: transparent;
                 border: none;
                 color: #A0AEC0;
-                font-size: 15px;
+                font-size: 14px;
                 padding: 2px 6px;
             }
             .header_icon_btn:hover {
                 color: #FFFFFF;
+            }
+            #close_btn:hover {
+                color: #FF5C93;
             }
 
             /* Historial */
@@ -115,12 +143,7 @@ class ChatWindow(QWidget):
                 height: 0px;
             }
 
-            /* Panel de Ajustes */
-            #settings_panel {
-                background-color: #1A1D27;
-                border-radius: 8px;
-                padding: 12px;
-            }
+            /* Entrada y botones */
             QLineEdit {
                 background-color: #242938;
                 color: #FFFFFF;
@@ -132,7 +155,6 @@ class ChatWindow(QWidget):
                 border: 1px solid #3B82F6;
             }
 
-            /* Entrada y botones */
             MessageInputEdit {
                 background-color: #242938;
                 color: #FFFFFF;
@@ -158,8 +180,17 @@ class ChatWindow(QWidget):
             #send_button:hover, #save_key_btn:hover {
                 background-color: #3B82F6;
             }
-            #send_button:pressed, #save_key_btn:pressed {
-                background-color: #1D61B8;
+            
+            #clear_chat_btn {
+                background-color: #242938;
+                color: #FF5C93;
+                border: 1px solid #32394E;
+                border-radius: 8px;
+                padding: 8px 14px;
+                font-weight: 600;
+            }
+            #clear_chat_btn:hover {
+                background-color: #2D3446;
             }
         """)
 
@@ -167,36 +198,53 @@ class ChatWindow(QWidget):
 
 
     def init_ui(self):
-        """ Configura la interfaz de usuario de la ventana de chat """
-        main_layout = QVBoxLayout()
+        # Contenedor raíz para aplicar el borde redondeado
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+
+        main_container = QFrame()
+        main_container.setObjectName("main_container")
+        main_layout = QVBoxLayout(main_container)
         main_layout.setContentsMargins(0, 0, 0, 10)
         main_layout.setSpacing(8)
 
-        # Cabecera superior (EchoMate)
+        # Cabecera superior (Logo + EchoMate + Ajustes + Cerrar)
         header_frame = QFrame()
         header_frame.setObjectName("header_frame")
         header_layout = QHBoxLayout(header_frame)
-        header_layout.setContentsMargins(12, 8, 12, 8)
+        header_layout.setContentsMargins(10, 6, 10, 6)
+        header_layout.setSpacing(8)
+
+        # Logo de EchoMate
+        logo_label = QLabel()
+        logo_path = os.path.join(os.getcwd(), "echoMate.png")
+        if os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            if not pixmap.isNull():
+                logo_label.setPixmap(pixmap.scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
         title_label = QLabel("EchoMate")
         title_label.setObjectName("header_title")
 
-        self.clear_btn = QPushButton("🗑")
-        self.clear_btn.setProperty("class", "header_icon_btn")
-        self.clear_btn.setToolTip("Reiniciar")
-        self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.clear_btn.clicked.connect(self.clear_chat_context)
-
+        # Botón de Ajustes (⚙) y Cerrar (✕)
         self.settings_btn = QPushButton("⚙")
         self.settings_btn.setProperty("class", "header_icon_btn")
-        self.settings_btn.setToolTip("Ajustes de API Key")
+        self.settings_btn.setToolTip("Ajustes de IA")
         self.settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_btn.clicked.connect(self.toggle_settings)
 
+        self.close_btn = QPushButton("✕")
+        self.close_btn.setObjectName("close_btn")
+        self.close_btn.setProperty("class", "header_icon_btn")
+        self.close_btn.setToolTip("Cerrar ventana")
+        self.close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.close_btn.clicked.connect(self.hide)
+
+        header_layout.addWidget(logo_label)
         header_layout.addWidget(title_label)
         header_layout.addStretch()
-        header_layout.addWidget(self.clear_btn)
         header_layout.addWidget(self.settings_btn)
+        header_layout.addWidget(self.close_btn)
         main_layout.addWidget(header_frame)
 
         # Contenedor con StackedWidget para alternar entre Chat y Ajustes
@@ -254,16 +302,38 @@ class ChatWindow(QWidget):
         save_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         save_btn.clicked.connect(self.save_api_key)
 
+        # Botón para Reiniciar Chat dentro del menú de Ajustes
+        clear_chat_btn = QPushButton("🗑 Reiniciar Conversación")
+        clear_chat_btn.setObjectName("clear_chat_btn")
+        clear_chat_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        clear_chat_btn.clicked.connect(self.clear_chat_context)
+
         settings_layout.addWidget(settings_title)
         settings_layout.addWidget(key_label)
         settings_layout.addWidget(self.api_key_input)
         settings_layout.addWidget(save_btn)
+        settings_layout.addSpacing(10)
+        settings_layout.addWidget(clear_chat_btn)
         settings_layout.addStretch()
 
         self.stack.addWidget(settings_widget)
 
         main_layout.addWidget(self.stack)
-        self.setLayout(main_layout)
+        root_layout.addWidget(main_container)
+
+
+    def mousePressEvent(self, event):
+        """ Detecta el clic izquierdo del mouse """
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+
+    def mouseMoveEvent(self, event):
+        """ Permite arrastrar la ventana """
+        if event.buttons() == Qt.MouseButton.LeftButton and not self._drag_pos.isNull():
+            self.move(event.globalPosition().toPoint() - self._drag_pos)
+            event.accept()
 
 
     def toggle_settings(self):
@@ -275,10 +345,11 @@ class ChatWindow(QWidget):
 
 
     def clear_chat_context(self):
-        """ Limpia el contexto de la conversación en el motor y en la pantalla """
+        """ Limpia la memoria del chat """
         if self.groq_engine:
             self.groq_engine.clear_history()
         self.chat_history.clear()
+        self.stack.setCurrentIndex(0)
         char_name = self.parent_window.character.name if self.parent_window else "EchoMate"
         self.add_bot_response(char_name, "¡Memoria del chat borrada! ¿De qué quieres hablar ahora?")
 
@@ -303,13 +374,13 @@ class ChatWindow(QWidget):
         if not text:
             return
 
-        formatted_text = text.replace('\n', '<br>')
+        formatted_user_text = parse_markdown_to_html(text)
         
         # Muestra el mensaje del usuario
         self.chat_history.append(
             f'<div style="margin-bottom: 10px;">'
             f'<span style="color: #4A90E2; font-weight: bold;">You</span><br>'
-            f'<span style="color: #DCE2EE;">{formatted_text}</span>'
+            f'<span style="color: #DCE2EE;">{formatted_user_text}</span>'
             f'</div>'
         )
         
@@ -321,12 +392,12 @@ class ChatWindow(QWidget):
         # Verifica si Groq está configurado
         if not self.groq_engine or not self.groq_engine.is_configured():
             tutorial_msg = (
-                f"¡Hola! Parece que aún no tienes configurada una **Groq API Key** para habilitar mi inteligencia. 🤖<br><br>"
-                f"Obtener una es **100% gratis** y te tomará solo 1 minuto:<br>"
-                f"1. Entra en <b>console.groq.com</b> y crea una cuenta.<br>"
-                f"2. Ve a la sección <b>API Keys</b> y haz clic en <i>Create API Key</i>.<br>"
-                f"3. Copia tu clave (empieza con <code>gsk_...</code>).<br>"
-                f"4. Haz clic en el botón de engrane <b>⚙</b> aquí arriba a la derecha, pégala y dale a <b>Guardar</b>.<br><br>"
+                f"¡Hola! Parece que aún no tienes configurada una **Groq API Key** para habilitar mi inteligencia. 🤖\n\n"
+                f"Obtener una es **100% gratis** y te tomará solo 1 minuto:\n"
+                f"1. Entra en **console.groq.com** y crea una cuenta.\n"
+                f"2. Ve a la sección **API Keys** y haz clic en *Create API Key*.\n"
+                f"3. Copia tu clave (empieza con `gsk_...`).\n"
+                f"4. Haz clic en el botón de engrane **⚙** arriba a la derecha, pégala y dale a **Guardar**.\n\n"
                 f"¡Y listo! Quedará guardada localmente en tu equipo para siempre."
             )
             self.add_bot_response(char_name, tutorial_msg)
@@ -337,12 +408,12 @@ class ChatWindow(QWidget):
 
 
     def add_bot_response(self, character_name, text):
-        """ Agrega la respuesta del bot con formato HTML y color distintivo """
-        formatted_text = text.replace('\n', '<br>')
+        """ Convierte la respuesta Markdown a HTML y la renderiza """
+        formatted_bot_text = parse_markdown_to_html(text)
         self.chat_history.append(
             f'<div style="margin-bottom: 10px;">'
             f'<span style="color: #FF5C93; font-weight: bold;">{character_name}</span><br>'
-            f'<span style="color: #DCE2EE;">{formatted_text}</span>'
+            f'<span style="color: #DCE2EE;">{formatted_bot_text}</span>'
             f'</div>'
         )
 
