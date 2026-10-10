@@ -8,6 +8,7 @@ from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QPixmap
 
 
+
 def parse_markdown_to_html(text: str) -> str:
     """ Convierte sintaxis básica de Markdown (**bold**, *italic*, `code`) a HTML """
     # Reemplazar saltos de línea por <br>
@@ -19,6 +20,7 @@ def parse_markdown_to_html(text: str) -> str:
     # Inline Code `code`
     formatted = re.sub(r'`(.*?)`', r'<code style="background-color: #2D3446; padding: 2px 4px; border-radius: 4px;">\1</code>', formatted)
     return formatted
+
 
 
 class MessageInputEdit(QTextEdit):
@@ -389,16 +391,19 @@ class ChatWindow(QWidget):
 
         char_name = self.parent_window.character.name if self.parent_window else "EchoMate"
 
-        # Verifica si Groq está configurado
-        if not self.groq_engine or not self.groq_engine.is_configured():
+        # Verificar si el archivo .env existe o si la clave está vacía
+        env_exists = self.cfg.has_env_file if self.cfg else False
+        has_key = self.groq_engine and self.groq_engine.is_configured()
+
+        if not env_exists or not has_key:
             tutorial_msg = (
-                f"¡Hola! Parece que aún no tienes configurada una **Groq API Key** para habilitar mi inteligencia. 🤖\n\n"
+                f"¡Hola! Parece que aún no tienes configurada una **Groq API Key** (no se encontró el archivo `.env`) para habilitar mi inteligencia. 🤖\n\n"
                 f"Obtener una es **100% gratis** y te tomará solo 1 minuto:\n"
                 f"1. Entra en **console.groq.com** y crea una cuenta.\n"
                 f"2. Ve a la sección **API Keys** y haz clic en *Create API Key*.\n"
                 f"3. Copia tu clave (empieza con `gsk_...`).\n"
                 f"4. Haz clic en el botón de engrane **⚙** arriba a la derecha, pégala y dale a **Guardar**.\n\n"
-                f"¡Y listo! Quedará guardada localmente en tu equipo para siempre."
+                f"¡Y listo! Se creará el archivo `.env` automáticamente en la carpeta principal para siempre."
             )
             self.add_bot_response(char_name, tutorial_msg)
         else:

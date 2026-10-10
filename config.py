@@ -8,13 +8,16 @@ load_dotenv()
 
 
 def get_base_dir():
-    """ Devuelve la ruta base real, compatible con PyInstaller --onedir y --onefile """
+    """ Devuelve la ruta base real, ya sea ejecutando script.py o el .exe empaquetado """
     if getattr(sys, 'frozen', False):
-        # Si viene compilado por PyInstaller, busca en la carpeta del ejecutable o en _MEIPASS
-        if hasattr(sys, '_MEIPASS'):
-            return sys._MEIPASS
         return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.dirname(os.path.abspath(__file__))
+
+# Cargar explícitamente el .env desde la ruta base absoluta
+env_path = os.path.join(get_base_dir(), ".env")
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+
 
 
 class ConfigManager:
@@ -24,7 +27,7 @@ class ConfigManager:
             
         self.assets_path = base_assets_path
         self.config_file = os.path.join(self.assets_path, "config.txt")
-        self.env_path = os.path.join(os.path.dirname(self.assets_path), ".env")
+        self.env_path = os.path.join(get_base_dir(), ".env")
         
         self.global_config = {}
         self.character_config = {}
@@ -32,7 +35,10 @@ class ConfigManager:
         self._load_global_config()
         self.active_character = self.global_config.get("START_CHAR", "GoldShip")
         
-        # Leer la API Key EXCLUSIVAMENTE del archivo .env
+        # Verificar si el archivo .env existe físicamente
+        self.has_env_file = os.path.exists(self.env_path)
+        
+        # Leer la API Key del entorno
         self.groq_api_key = os.getenv("GROQ_API_KEY", "")
         
         self._load_character_config()
@@ -81,7 +87,7 @@ class ConfigManager:
                         lines.append(f"START_CHAR={char_name}\n")
                         updated = True
                     else:
-                        lines.append(line)
+                        lines.append(line if line.endswith('\n') else line + '\n')
             
             if not updated:
                 lines.append(f"START_CHAR={char_name}\n")
@@ -93,14 +99,22 @@ class ConfigManager:
 
 
     def set_groq_api_key(self, api_key: str):
-        """ Guarda la clave de Groq ÚNICAMENTE en la variable de entorno y en el archivo .env """
+        """ Crea o actualiza el archivo .env con el formato GROQ_API_KEY='...' en la ruta principal """
         self.groq_api_key = api_key
-        # Escribe de forma limpia dentro del archivo .env en la raíz
-        set_key(self.env_path, "GROQ_API_KEY", api_key)
+        
+        # Asegurar que el archivo .env exista o se cree en la ruta base
+        if not os.path.exists(self.env_path):
+            with open(self.env_path, "w", encoding="utf-8") as f:
+                f.write(f"GROQ_API_KEY='{api_key}'\n")
+        else:
+            set_key(self.env_path, "GROQ_API_KEY", f"'{api_key}'")
+            
+        self.has_env_file = True
 
 
 def load_sleep_time():
-    config_path = os.path.join("assets", "config.txt")
+    config_path = os.path.join(get_base_dir(), "assets", "config.txt")
+    
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
             for line in f:
