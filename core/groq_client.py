@@ -56,7 +56,7 @@ class GroqEngine:
 
         try:
             completion = self.client.chat.completions.create(
-                model="openai/gpt-oss-120b",
+                model="qwen/qwen3.8-27b",
                 messages=messages_payload,
                 temperature=0.7,
                 max_tokens=600,
