@@ -64,7 +64,7 @@ class GroqEngine:
             
             bot_response = completion.choices[0].message.content
 
-            # Guardar la respuesta del bot en la memoria para el siguiente turno
+            # Guardar la respuesta del personaje en la memoria para el siguiente turno
             self.conversation_history.append({"role": "assistant", "content": bot_response})
             
             return bot_response

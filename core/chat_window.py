@@ -1,3 +1,4 @@
+import sys
 import os
 import re
 from PyQt6.QtWidgets import (
@@ -33,26 +34,27 @@ class MessageInputEdit(QTextEdit):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
+        self.document().setDocumentMargin(2)
+        
         font_metrics = self.fontMetrics()
         self.line_height = font_metrics.lineSpacing()
-        self.padding = 12 
         
-        self.min_height = self.line_height + self.padding
-        self.max_height = (self.line_height * 3) + self.padding
+        self.base_height = 36
+        self.max_height = (self.line_height * 3) + 10
         
-        self.setFixedHeight(self.min_height)
+        self.setFixedHeight(self.base_height)
         self.textChanged.connect(self.adjust_input_height)
 
 
     def adjust_input_height(self):
         """ Ajusta la altura entre 1 y 3 líneas """
-        doc_height = int(self.document().size().height()) + (self.padding // 2)
-        new_height = max(self.min_height, min(doc_height, self.max_height))
+        doc_height = int(self.document().size().height()) + 8
+        new_height = max(self.base_height, min(doc_height, self.max_height))
         self.setFixedHeight(new_height)
 
 
     def keyPressEvent(self, event):
-        """ Enter para enviar; Shift + Enter para salto de línea """
+        """ Enter para enviar, Shift + Enter para salto de línea """
         if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
             if not (event.modifiers() & Qt.KeyboardModifier.ShiftModifier):
                 if self.parent_chat:
@@ -79,29 +81,37 @@ class ChatWindow(QWidget):
             Qt.WindowType.WindowStaysOnTopHint
         )
         
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        
         self.setWindowTitle("EchoMate - Chat")
         self.resize(350, 480)
         
         # Estilos visuales en tono oscuro EchoMate
         self.setStyleSheet("""
+            /* Configuración global de texto y fuente para los elementos internos */
             QWidget {
-                background-color: #161922;
                 color: #DCE2EE;
                 font-family: 'Segoe UI', system-ui, sans-serif;
                 font-size: 13px;
             }
+
+            /* Fondo de la ventana raíz totalmente transparente para las esquinas redondas */
+            ChatWindow {
+                background-color: transparent;
+            }
             
-            /* Contenedor principal con borde suave para compensar la falta de marco */
+            /* Contenedor principal con esquinas redondeadas y fondo oscuro */
             #main_container {
+                background-color: #161922;
                 border: 1px solid #232836;
-                border-radius: 8px;
+                border-radius: 12px;
             }
 
             #header_frame {
                 background-color: #111319;
                 border-bottom: 1px solid #232836;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
+                border-top-left-radius: 11px;
+                border-top-right-radius: 11px;
                 padding: 4px 8px;
             }
             #header_title {
@@ -135,14 +145,20 @@ class ChatWindow(QWidget):
                 background: #161922;
                 width: 6px;
                 margin: 0px;
+                border: none;
             }
             QScrollBar::handle:vertical {
-                background: #2D3446;
+                background: #A0AEC0;
                 border-radius: 3px;
                 min-height: 20px;
             }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: #242938;
+            }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
+                border: none;
+                background: none;
             }
 
             /* Entrada y botones */
@@ -162,7 +178,7 @@ class ChatWindow(QWidget):
                 color: #FFFFFF;
                 border: 1px solid #32394E;
                 border-radius: 8px;
-                padding: 6px 10px;
+                padding: 4px 8px;
                 font-size: 13px;
             }
             MessageInputEdit:focus {
@@ -174,10 +190,11 @@ class ChatWindow(QWidget):
                 color: #FFFFFF;
                 border: none;
                 border-radius: 8px;
-                padding: 8px 18px;
+                padding: 0px 18px;
                 font-weight: 600;
                 font-size: 13px;
-                min-height: 20px;
+                min-height: 36px;
+                max-height: 36px;
             }
             #send_button:hover, #save_key_btn:hover {
                 background-color: #3B82F6;
@@ -228,7 +245,7 @@ class ChatWindow(QWidget):
         title_label = QLabel("EchoMate")
         title_label.setObjectName("header_title")
 
-        # Botón de Ajustes (⚙) y Cerrar (✕)
+        # Botón de Ajustes y Cerrar
         self.settings_btn = QPushButton("⚙")
         self.settings_btn.setProperty("class", "header_icon_btn")
         self.settings_btn.setToolTip("Ajustes de IA")
@@ -336,6 +353,15 @@ class ChatWindow(QWidget):
         if event.buttons() == Qt.MouseButton.LeftButton and not self._drag_pos.isNull():
             self.move(event.globalPosition().toPoint() - self._drag_pos)
             event.accept()
+
+
+    def keyPressEvent(self, event):
+        """ Presionar Escape (Esc) oculta el chat """
+        if event.key() == Qt.Key.Key_Escape:
+            self.hide()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
 
 
     def toggle_settings(self):
