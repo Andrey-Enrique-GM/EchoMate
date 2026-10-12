@@ -450,11 +450,34 @@ class ChatWindow(QWidget):
 
 
     def update_position(self):
-        """ Posiciona la ventana de chat al lado izquierdo del personaje """
+        """ Posiciona inteligentemente la ventana de chat evitando que se salga de los límites de la pantalla """
         if self.parent_window:
             pet_geo = self.parent_window.geometry()
-            new_x = pet_geo.x() - self.width() - 10
+            
+            # Obtiene la pantalla actual donde está el personaje
+            current_screen = self.screen() or self.parent_window.screen()
+            screen_geo = current_screen.availableGeometry()
+            
+            chat_width = self.width()
+            chat_height = self.height()
+            
+            # Lógica Horizontal (X): Intenta izquierda, si no hay espacio, pasa a la derecha
+            new_x = pet_geo.x() - chat_width - 10
+            if new_x < screen_geo.left():
+                # Coloca a la derecha del personaje si a la izquierda no hay espacio
+                new_x = pet_geo.x() + pet_geo.width() + 10
+                
+            # Lógica Vertical (Y): Alinea con el personaje, pero ajustando si se sale arriba o abajo
             new_y = pet_geo.y()
+            
+            # Si se sale por la parte inferior de la pantalla, subirlo
+            if new_y + chat_height > screen_geo.bottom():
+                new_y = screen_geo.bottom() - chat_height - 10
+                
+            # Si se sale por la parte superior de la pantalla, bajarlo
+            if new_y < screen_geo.top():
+                new_y = screen_geo.top() + 10
+                
             self.move(new_x, new_y)
 
 
