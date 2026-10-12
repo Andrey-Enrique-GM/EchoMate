@@ -1,8 +1,12 @@
 # EchoMate ✨💬
 
-[![Descargar Ejecutable](https://img.shields.io/badge/Descargar-EchoMate_v1.0_(Windows)-2ea44f?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Andrey-Enrique-GM/EchoMate/releases/download/v1.0.0/EchoMate_v1.0.zip)
-
 **EchoMate** es un asistente virtual de escritorio e interactivo que trae mascotas y personajes animados directamente a tu pantalla. Combina comportamientos autónomos (caminata independiente, seguimiento de cursor, físicas de arrastre y efectos de sonido) con un **chat inteligente** integrado que le permite conversar, mantener contexto de tus charlas y asistirte en el día a día.
+
+---
+
+[![Descargar Ejecutable](https://img.shields.io/badge/Descargar-EchoMate_v1.0_(Windows)-58A3D5?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Andrey-Enrique-GM/EchoMate/releases/download/v1.0.0/EchoMate_v1.0.zip)
+
+[![Descargar Ejecutable](https://img.shields.io/badge/Descargar-EchoMate_v1.5_(Windows)-2A84BF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Andrey-Enrique-GM/EchoMate/releases/download/v1.5.0/EchoMate_v1.5.zip)
 
 ---
 
