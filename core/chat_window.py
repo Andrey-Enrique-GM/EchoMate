@@ -490,13 +490,23 @@ class ChatWindow(QWidget):
 
         formatted_user_text = parse_markdown_to_html(text)
         
-        # Muestra el mensaje del usuario
-        self.chat_history.append(
-            f'<div style="margin-bottom: 10px;">'
-            f'<span style="color: #4A90E2; font-weight: bold;">You</span><br>'
-            f'<span style="color: #DCE2EE;">{formatted_user_text}</span>'
-            f'</div>'
-        )
+        # Burbuja del USUARIO (Derecha)
+        user_bubble_html = f'''
+        <table width="100%" style="margin-bottom: 12px;" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="right">
+                    <table cellspacing="0" cellpadding="0" style="max-width: 80%;">
+                        <tr>
+                            <td style="background-color: #1E40AF; color: #FFFFFF; padding: 8px 12px; border-radius: 8px; text-align: left;">
+                                {formatted_user_text}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        '''
+        self.chat_history.append(user_bubble_html)
         
         self.input_field.clear()
         self.input_field.adjust_input_height()
@@ -527,12 +537,27 @@ class ChatWindow(QWidget):
     def add_bot_response(self, character_name, text):
         """ Convierte la respuesta Markdown a HTML y la renderiza """
         formatted_bot_text = parse_markdown_to_html(text)
-        self.chat_history.append(
-            f'<div style="margin-bottom: 10px;">'
-            f'<span style="color: #FF5C93; font-weight: bold;">{character_name}</span><br>'
-            f'<span style="color: #DCE2EE;">{formatted_bot_text}</span>'
-            f'</div>'
-        )
+        
+        # Burbuja del PERSONAJE (Izquierda)
+        bot_bubble_html = f'''
+        <table width="100%" style="margin-bottom: 12px;" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="left">
+                    <div style="color: #FF5C93; font-weight: 600; font-size: 11px; margin-bottom: 3px; margin-left: 4px;">
+                        {character_name}
+                    </div>
+                    <table cellspacing="0" cellpadding="0" style="max-width: 85%;">
+                        <tr>
+                            <td style="background-color: #242938; border: 1px solid #2D3446; color: #DCE2EE; padding: 8px 12px; border-radius: 8px; text-align: left;">
+                                {formatted_bot_text}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        '''
+        self.chat_history.append(bot_bubble_html)
 
 
     def update_position(self):
