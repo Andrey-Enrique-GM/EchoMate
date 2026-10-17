@@ -5,8 +5,9 @@ from PyQt6.QtCore import QElapsedTimer
 
 
 class SoundManager:
-    def __init__(self, character_name: str, assets_dir: str = "assets"):
+    def __init__(self, character_name: str, assets_dir: str = "assets", config_manager = None):
         self.character_name = character_name
+        self.config_manager = config_manager
         self.sounds_dir = os.path.join(assets_dir, "Sounds", character_name)
         
         if not pygame.mixer.get_init():
@@ -46,6 +47,9 @@ class SoundManager:
 
     def play_sound(self, sound_name: str):
         """ Reproduce el sonido de una acción si existe """
+        if self.config_manager and getattr(self.config_manager, 'mute_sounds', False):
+            return
+
         sound_key = sound_name.lower()
 
         if sound_key in self.sounds:

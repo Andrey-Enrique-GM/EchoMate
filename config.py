@@ -34,6 +34,9 @@ class ConfigManager:
         
         self._load_global_config()
         self.active_character = self.global_config.get("START_CHAR", "GoldShip")
+
+        self.mute_sounds = self.global_config.get("MUTE_SOUNDS", "false").lower() == "true"
+        self.hide_avatar = self.global_config.get("HIDE_AVATAR", "false").lower() == "true"
         
         # Verificar si el archivo .env existe físicamente
         self.has_env_file = os.path.exists(self.env_path)
@@ -96,6 +99,40 @@ class ConfigManager:
                 f.writelines(lines)
                 
         self._load_character_config()
+
+    
+    def set_mute_sounds(self, mute: bool):
+        """ Actualiza el valor de mute_sounds en memoria y en el archivo config.txt """
+        self.mute_sounds = mute
+        self._update_global_config_key("MUTE_SOUNDS", str(mute).lower())
+
+
+    def set_hide_avatar(self, hide: bool):
+        """ Actualiza el valor de hide_avatar en memoria y en el archivo config.txt """
+        self.hide_avatar = hide
+        self._update_global_config_key("HIDE_AVATAR", str(hide).lower())
+        if hide:
+            # Forzar también el apagado de sonidos si se oculta el avatar
+            self.set_mute_sounds(True)
+
+
+    def _update_global_config_key(self, key: str, value: str):
+        """ Actualiza una clave específica en la configuración global """
+        self.global_config[key] = value
+        if os.path.exists(self.config_file):
+            lines = []
+            updated = False
+            with open(self.config_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().startswith(key):
+                        lines.append(f"{key}={value}\n")
+                        updated = True
+                    else:
+                        lines.append(line if line.endswith('\n') else line + '\n')
+            if not updated:
+                lines.append(f"{key}={value}\n")
+            with open(self.config_file, "w", encoding="utf-8") as f:
+                f.writelines(lines)
 
 
     def set_groq_api_key(self, api_key: str):

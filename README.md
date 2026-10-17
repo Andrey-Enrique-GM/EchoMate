@@ -1,6 +1,6 @@
 # EchoMate ✨💬
 
-**EchoMate** es un asistente virtual de escritorio e interactivo que trae mascotas y personajes animados directamente a tu pantalla. Combina comportamientos autónomos (caminata independiente, seguimiento de cursor, físicas de arrastre y efectos de sonido) con un **chat inteligente** integrado que le permite conversar, mantener contexto de tus charlas y asistirte en el día a día.
+**EchoMate** es un asistente virtual de escritorio e interactivo que trae personajes animados directamente a tu pantalla. Combina comportamientos autónomos (caminata independiente, seguimiento de cursor, físicas de arrastre y efectos de sonido) con un **chat inteligente** integrado que le permite conversar, mantener contexto de tus charlas y asistirte en el día a día.
 
 ---
 
@@ -12,8 +12,8 @@
 
 ## 🚀 Características Principales
 
-* **Mascotas Autónomas de Escritorio:** Animaciones fluidas en tiempo real, físicas de arrastre, movimiento aleatorio y respuestas a interacciones del usuario según la zona del sprite.
-* **Chat Integrado con IA:** Conversa directamente con tu mascota a través de una ventana flotante integrada (*Always-On-Top*).
+* **Personajes Autónomos de Escritorio:** Animaciones fluidas en tiempo real, físicas de arrastre, movimiento aleatorio y respuestas a interacciones del usuario según la zona del sprite.
+* **Chat Integrado con IA:** Conversa directamente con tu personaje a través de una ventana flotante integrada (*Always-On-Top*).
 * **Memoria de Conversación:** Mantiene el contexto de las charlas anteriores para ofrecer respuestas coherentes y continuas.
 * **Integración Abierta con Groq API:** Funciona utilizando la API gratuita de **Groq**, permitiendo respuestas ultra rápidas con modelos de lenguaje de última generación.
 * **Privacidad y Configuración Local:** Tus claves API se almacenan de forma totalmente local en un archivo de entorno `.env` en tu equipo, asegurando la privacidad de tus datos.

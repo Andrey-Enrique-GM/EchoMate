@@ -3,6 +3,8 @@ START_CHAR=GoldShip
 
 #-- Visual & Effects Settings --
 SPRITE_FRAMERATE=60
+MUTE_SOUNDS=false
+HIDE_AVATAR=false
 
 #-- Movement Settings --
 FOLLOW_RADIUS=100.0

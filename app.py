@@ -53,8 +53,9 @@ def switch_character(app, new_char_name):
 
     # Instanciar el nuevo personaje
     character = Character(character_name=new_char_name)
-    window = PetWindow(character)
-    window.show()
+    window = PetWindow(character, config_manager=cfg)
+    if not cfg.hide_avatar:
+        window.show()
 
     # Actualizar la referencia del parent en chat_win si ya existe
     if chat_win:
@@ -125,8 +126,9 @@ def main():
     character = Character(character_name=cfg.active_character)
     groq_engine = GroqEngine(api_key=cfg.groq_api_key)
     
-    window = PetWindow(character)
-    window.show()
+    window = PetWindow(character, config_manager=cfg)
+    if not cfg.hide_avatar:
+        window.show()
 
     # Tray Icon
     tray = QSystemTrayIcon(app)

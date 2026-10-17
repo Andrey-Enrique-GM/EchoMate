@@ -3,7 +3,8 @@ import os
 import re
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QTextEdit, QPushButton, QFrame, QLineEdit, QStackedWidget
+    QTextEdit, QPushButton, QFrame, QLineEdit, QStackedWidget,
+    QCheckBox
 )
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QPixmap
@@ -211,6 +212,37 @@ class ChatWindow(QWidget):
             #clear_chat_btn:hover {
                 background-color: #2D3446;
             }
+
+            QCheckBox {
+                color: #DCE2EE;
+                font-size: 13px;
+                spacing: 8px;
+            }
+            QCheckBox:disabled {
+                color: #64748B;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 1px solid #32394E;
+                border-radius: 4px;
+                background-color: #242938;
+            }
+            QCheckBox::indicator:hover {
+                border-color: #3B82F6;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #2575DC;
+                border-color: #3B82F6;
+            }
+            QCheckBox::indicator:disabled {
+                background-color: #1A1E29;
+                border-color: #262B3A;
+            }
+            QCheckBox::indicator:checked:disabled {
+                background-color: #1D3557;
+                border-color: #2A4365;
+            }
         """)
 
         self.init_ui()
@@ -248,7 +280,7 @@ class ChatWindow(QWidget):
         # Botón de Ajustes y Cerrar
         self.settings_btn = QPushButton("⚙")
         self.settings_btn.setProperty("class", "header_icon_btn")
-        self.settings_btn.setToolTip("Ajustes de IA")
+        self.settings_btn.setToolTip("Ajustes")
         self.settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_btn.clicked.connect(self.toggle_settings)
 
@@ -304,7 +336,7 @@ class ChatWindow(QWidget):
         settings_layout.setContentsMargins(15, 10, 15, 10)
         settings_layout.setSpacing(12)
 
-        settings_title = QLabel("<b>Ajustes de IA</b>")
+        settings_title = QLabel("<b>Ajustes</b>")
         settings_title.setStyleSheet("font-size: 15px; color: #FFFFFF;")
         
         key_label = QLabel("Groq API Key:")
@@ -321,6 +353,25 @@ class ChatWindow(QWidget):
         save_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         save_btn.clicked.connect(self.save_api_key)
 
+        self.hide_avatar_checkbox = QCheckBox("Ocultar personaje")
+        self.hide_avatar_checkbox.setCursor(Qt.CursorShape.PointingHandCursor)
+        if self.cfg and hasattr(self.cfg, 'hide_avatar'):
+            self.hide_avatar_checkbox.setChecked(self.cfg.hide_avatar)
+
+        self.mute_checkbox = QCheckBox("Silenciar sonidos")
+        self.mute_checkbox.setCursor(Qt.CursorShape.PointingHandCursor)
+        if self.cfg and hasattr(self.cfg, 'mute_sounds'):
+            self.mute_checkbox.setChecked(self.cfg.mute_sounds)
+
+        # Si el personaje está oculto, bloquear la opción de silenciar para que permanezca activa
+        if self.hide_avatar_checkbox.isChecked():
+            self.mute_checkbox.setChecked(True)
+            self.mute_checkbox.setEnabled(False)
+            self.mute_checkbox.setToolTip("Los sonidos están silenciados automáticamente porque el personaje está oculto")
+
+        self.mute_checkbox.toggled.connect(self.on_mute_toggled)
+        self.hide_avatar_checkbox.toggled.connect(self.on_hide_avatar_toggled)
+
         # Botón para Reiniciar Chat dentro del menú de Ajustes
         clear_chat_btn = QPushButton("🗑 Reiniciar Conversación")
         clear_chat_btn.setObjectName("clear_chat_btn")
@@ -331,7 +382,10 @@ class ChatWindow(QWidget):
         settings_layout.addWidget(key_label)
         settings_layout.addWidget(self.api_key_input)
         settings_layout.addWidget(save_btn)
-        settings_layout.addSpacing(10)
+        settings_layout.addSpacing(5)
+        settings_layout.addWidget(self.hide_avatar_checkbox)
+        settings_layout.addWidget(self.mute_checkbox)
+        settings_layout.addSpacing(5)
         settings_layout.addWidget(clear_chat_btn)
         settings_layout.addStretch()
 
@@ -394,6 +448,38 @@ class ChatWindow(QWidget):
         self.stack.setCurrentIndex(0)
         char_name = self.parent_window.character.name if self.parent_window else "EchoMate"
         self.add_bot_response(char_name, "¡Perfecto! Tu clave de Groq ha sido guardada. ¡Ahora sí podemos conversar!")
+
+
+    def on_mute_toggled(self, checked):
+        if self.cfg:
+            self.cfg.set_mute_sounds(checked)
+        if checked and self.parent_window and hasattr(self.parent_window, 'sound_manager'):
+            self.parent_window.sound_manager.stop_all_sounds()
+
+
+    def on_hide_avatar_toggled(self, checked):
+        if self.cfg:
+            self.cfg.set_hide_avatar(checked)
+        
+        # Si se oculta el avatar, se silencia obligatoriamente y se deshabilita la casilla
+        if checked:
+            self.mute_checkbox.setChecked(True)
+            self.mute_checkbox.setEnabled(False)
+            self.mute_checkbox.setToolTip("Los sonidos están silenciados automáticamente porque el personaje está oculto")
+            if self.cfg:
+                self.cfg.set_mute_sounds(True)
+        else:
+            self.mute_checkbox.setEnabled(True)
+            self.mute_checkbox.setToolTip("")
+
+        # Ocultar o mostrar la ventana principal del personaje sin cerrar el programa
+        if self.parent_window:
+            if checked:
+                # Desactivar interacción y ocultar
+                self.parent_window.hide()
+            else:
+                self.parent_window.show()
+                self.parent_window.update_position() if hasattr(self.parent_window, 'update_position') else None
 
 
     def send_message(self):

@@ -11,14 +11,15 @@ from core.sound_manager import SoundManager
 
 
 class PetWindow(QWidget):
-    def __init__(self, character: Character, target_size: int = 230, fps: int = 35):
+    def __init__(self, character: Character, target_size: int = 230, fps: int = 35, config_manager=None):
         super().__init__()
 
         self.character = character
         self.target_size = target_size
+        self.config_manager = config_manager
         self.current_state = None  # Se inicializa en None para permitir que set_state("intro") funcione
 
-        self.sound_manager = SoundManager(self.character.name)
+        self.sound_manager = SoundManager(self.character.name, config_manager=self.config_manager)
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
