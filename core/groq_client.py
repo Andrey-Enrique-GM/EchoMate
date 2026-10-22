@@ -33,15 +33,38 @@ class GroqEngine:
 
 
     def get_response(self, user_message: str, character_name: str = "GoldShip") -> str:
-        """ Envía la petición a la API de Groq """
+        """ Envía la petición a la API de Groq con un System Prompt personalizado según el personaje """
         if not self.is_configured():
             return None
 
-        # Definir el System Prompt
-        system_prompt = (
-            f"Eres {character_name}, un asistente virtual animado de escritorio. "
-            f"Tienes personalidad carismática, alegre y servicial. "
-            f"Responde de forma corta, directa, sin rodeos, expresiva y amigable."
+        # Diccionario con personalidades únicas por personaje (puedes agregar los que necesites)
+        character_personalities = {
+            "goldship": (
+                f"Eres {character_name} (Gold Ship), una chica caballo (Umamusume) relajada pero con ocurrencias divertidas de vez en cuando. "
+                f"Actúas como un asistente de escritorio amigable, informal y un poco impredecible, pero sin exagerar. "
+                f"Responde de forma muy corta, directa y natural (máximo 2 o 3 frases), manteniendo un tono casual y conversacional sin escribir bloques largos."
+            ),
+            "mambo": (
+                f"Eres {character_name} (Matikanetannhauser / Mambo), una chica caballo (Umamusume) alegre, optimista y muy cálida. "
+                f"Eres como una compañera cercana que te apoya con buena vibra y un toque retro relajado. "
+                f"Responde de forma corta, directa y muy amable (máximo 2 o 3 frases), de manera natural y sin forzar demasiada energía."
+            ),
+            "tachyon": (
+                f"Eres {character_name} (Agnes Tachyon), una chica caballo (Umamusume) investigadora y analítica. "
+                f"Tienes una personalidad calmada, curiosa y ligeramente cínica o enfocada en la ciencia, pero respondes de forma útil y fluida. "
+                f"Responde de forma corta, directa y concisa (máximo 2 o 3 frases), manteniendo la compostura sin divagar en ensayos científicos largos."
+            )
+        }
+
+        # Buscar la personalidad específica (normalizando a minúsculas) o usar una genérica rica
+        char_key = character_name.strip().lower()
+        system_prompt = character_personalities.get(
+            char_key,
+            (
+                f"Eres {character_name}, un asistente virtual animado de escritorio. "
+                f"Tienes una personalidad carismática, alegre, única y servicial. "
+                f"Responde de forma corta, directa, sin rodeos, expresiva y amigable."
+            )
         )
 
         # Registrar el mensaje actual del usuario en la memoria
@@ -58,7 +81,7 @@ class GroqEngine:
             completion = self.client.chat.completions.create(
                 model="qwen/qwen3.8-27b",
                 messages=messages_payload,
-                temperature=0.7,
+                temperature=0.8,
                 max_tokens=600,
             )
             
