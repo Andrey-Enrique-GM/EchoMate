@@ -346,12 +346,41 @@ class ChatWindow(QWidget):
         self.chat_scroll.setWidget(self.chat_content)
         chat_layout.addWidget(self.chat_scroll)
 
+        # Obtener el nombre del personaje actual
+        char_name = self.parent_window.character.name.lower() if (self.parent_window and hasattr(self.parent_window, 'character')) else "char"
+
+        # Mensajes dinámicos según el personaje activo
+        placeholders = {
+            "goldship": "¿Qué caos armamos hoy, humano?",
+            "mambo": "¿Qué tienes en mente?",
+            "tachyon": "¿Qué experimento analizamos hoy?",
+            "cafe": "¿Un café para charlar...?",
+        }
+        default_msg = "Comienza a hablar con tu asistente..."
+        
+        greeting_text = placeholders.get(char_name, default_msg)
+
+        self.placeholder_label = QLabel(greeting_text)
+        self.placeholder_label.setStyleSheet("color: #64748B; font-style: italic;")
+        self.chat_layout_inner.addWidget(self.placeholder_label)
+
         input_container = QWidget()
         input_layout = QHBoxLayout(input_container)
         input_layout.setContentsMargins(10, 0, 10, 0)
         input_layout.setSpacing(8)
 
         self.input_field = MessageInputEdit(parent_chat=self)
+        
+        # Inputs dinámicos según el personaje activo
+        input_field_placeholders = {
+            "goldship": "Escríbeme algo divertido...",
+            "mambo": "Escríbeme algo sin prisa...",
+            "tachyon": "Escríbeme algo interesante...",
+            "cafe": "Escríbeme despacio...",
+        }
+        default_msg = "Escribe aquí..."
+        
+        self.input_field.setPlaceholderText(input_field_placeholders.get(char_name, default_msg))
         self.send_button = QPushButton("Enviar")
         self.send_button.setObjectName("send_button")
         self.send_button.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -526,6 +555,11 @@ class ChatWindow(QWidget):
         text = self.input_field.toPlainText().strip()
         if not text:
             return
+
+        # Elimina el placeholder si existe
+        if hasattr(self, 'placeholder_label') and self.placeholder_label:
+            self.placeholder_label.deleteLater()
+            self.placeholder_label = None
 
         formatted_user_text = parse_markdown_to_html(text)
         
