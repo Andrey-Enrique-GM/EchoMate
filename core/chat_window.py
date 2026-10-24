@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QTextEdit, QPushButton, QFrame, QLineEdit, QStackedWidget,
     QCheckBox, QScrollArea
 )
-from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtCore import Qt, QPoint, pyqtSignal
 from PyQt6.QtGui import QPixmap
 
 
@@ -66,6 +66,9 @@ class MessageInputEdit(QTextEdit):
 
 
 class ChatWindow(QWidget):
+    # Definir una señal para notificar cambios en los ajustes
+    settings_changed = pyqtSignal()
+
     def __init__(self, parent_window=None, config_manager=None, groq_engine=None):
         super().__init__()
         self.parent_window = parent_window
@@ -524,6 +527,9 @@ class ChatWindow(QWidget):
         if checked and self.parent_window and hasattr(self.parent_window, 'sound_manager'):
             self.parent_window.sound_manager.stop_all_sounds()
 
+        # Emitir la señal para actualizar el Tray Icon
+        self.settings_changed.emit()
+
 
     def on_hide_avatar_toggled(self, checked):
         if self.cfg:
@@ -548,6 +554,9 @@ class ChatWindow(QWidget):
             else:
                 self.parent_window.show()
                 self.parent_window.update_position() if hasattr(self.parent_window, 'update_position') else None
+
+        # Emitir la señal para actualizar el Tray Icon
+        self.settings_changed.emit()
 
 
     def send_message(self):

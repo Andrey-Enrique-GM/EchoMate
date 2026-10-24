@@ -29,6 +29,8 @@ def toggle_chat():
             config_manager=cfg, 
             groq_engine=groq_engine
         )
+        # Conectar la señal de chat_window con el refresh del tray de app.py
+        chat_win.settings_changed.connect(refresh_tray)
     
     if chat_win.isVisible():
         chat_win.hide()
@@ -65,20 +67,41 @@ def switch_character(app, new_char_name):
     update_tray_icon(character)
 
 
-def update_tray_icon(character):
-    """ Actualiza el icono de la bandeja del sistema con el sprite del personaje """
-    global tray
+def update_tray_icon(character=None):
+    """ Actualiza el icono de la bandeja del sistema según el estado (normal, muted, hidden) """
+    global tray, cfg, window
     if not tray:
         return
 
-    idle_data = character.get_animation_data("idle")
-    full_pixmap = QPixmap(idle_data["path"])
+    char_name = character.name if character else (window.character.name if window else "EchoMate")
 
-    if not full_pixmap.isNull():
-        icon_pixmap = full_pixmap.copy(0, 0, idle_data["frame_width"], idle_data["frame_height"])
-        tray.setIcon(QIcon(icon_pixmap))
+    # Evaluar estados estrictos
+    if getattr(cfg, 'hide_avatar', False):
+        icon_filename = "echomate_hidden.png"
+        status_text = "Oculto"
+    elif getattr(cfg, 'mute_sounds', False):
+        icon_filename = "echomate_muted.png"
+        status_text = "Silenciado"
+    else:
+        icon_filename = "echomate_normal.png"
+        status_text = "Activo"
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(base_dir, "assets", "Tray", icon_filename)
     
-    tray.setToolTip(f"EchoMate - {character.name}")
+    if os.path.exists(icon_path):
+        tray.setIcon(QIcon(icon_path))
+    
+    tray.setToolTip(f"EchoMate - {char_name} ({status_text})")
+
+
+def refresh_tray():
+    """ Función para la actualización del ícono y tooltip del Tray según config """
+    global tray, window
+    if not tray:
+        return
+    current_char = window.character if (window and hasattr(window, 'character')) else None
+    update_tray_icon(current_char)
 
 
 def setup_tray_menu(app):
