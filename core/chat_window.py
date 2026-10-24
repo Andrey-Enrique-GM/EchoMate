@@ -26,7 +26,7 @@ def parse_markdown_to_html(text: str) -> str:
 
 
 class MessageInputEdit(QTextEdit):
-    """ QTextEdit personalizado oscuro que crece hasta 3 renglones y envía con Enter """
+    """ QTextEdit personalizado oscuro que crece hasta 3 renglones, envía con Enter y pega siempre sin formato """
     def __init__(self, parent_chat=None):
         super().__init__()
         self.parent_chat = parent_chat
@@ -64,6 +64,13 @@ class MessageInputEdit(QTextEdit):
         super().keyPressEvent(event)
 
 
+    def insertFromMimeData(self, source):
+        """ Intercepta cualquier intento de pegar texto y fuerza el formato plano """
+        if source.hasText():
+            plain_text = source.text()
+            self.textCursor().insertText(plain_text)
+
+
 
 class ChatWindow(QWidget):
     # Definir una señal para notificar cambios en los ajustes
@@ -74,9 +81,17 @@ class ChatWindow(QWidget):
         self.parent_window = parent_window
         self.cfg = config_manager
         self.groq_engine = groq_engine
+
+        # Cargar tamaño persistente desde el ConfigManager
+        width = getattr(self.cfg, 'chat_width', 350) if self.cfg else 350
+        height = getattr(self.cfg, 'chat_height', 480) if self.cfg else 480
+        self.resize(width, height)
         
-        # Para el arrastre de ventana sin bordes
+        # Para el arrastre y redimensionamiento
         self._drag_pos = QPoint()
+        self._is_resizing = False
+        self._resize_edge = None
+        self.setMouseTracking(True) # Detecta los bordes con el mouse
 
         # Flags: Sin bordes de ventana + Tool (sin barra de tareas) + StaysOnTop
         self.setWindowFlags(
@@ -86,9 +101,8 @@ class ChatWindow(QWidget):
         )
         
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        
+
         self.setWindowTitle("EchoMate - Chat")
-        self.resize(350, 480)
         
         # Estilos visuales en tono oscuro EchoMate
         self.setStyleSheet("""
@@ -460,18 +474,74 @@ class ChatWindow(QWidget):
         root_layout.addWidget(main_container)
 
 
+    def _get_resize_edge(self, pos):
+        """ Detecta si el cursor está en un borde para permitir redimensionar la ventana """
+        margin = 8
+        rect = self.rect()
+        x, y = pos.x(), pos.y()
+        
+        left = x < margin
+        right = x > rect.width() - margin
+        top = y < margin
+        bottom = y > rect.height() - margin
+        
+        if top and left: return "top_left"
+        if top and right: return "top_right"
+        if bottom and left: return "bottom_left"
+        if bottom and right: return "bottom_right"
+        if left: return "left"
+        if right: return "right"
+        if top: return "top"
+        if bottom: return "bottom"
+        return None
+
+
     def mousePressEvent(self, event):
-        """ Detecta el clic izquierdo del mouse """
+        """ Inicia el arrastre o el redimensionamiento de la ventana """
         if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-            event.accept()
+            self._resize_edge = self._get_resize_edge(event.pos())
+            if self._resize_edge:
+                self._is_resizing = True
+                self._drag_pos = event.globalPosition().toPoint()
+                event.accept()
+            else:
+                self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                event.accept()
 
 
     def mouseMoveEvent(self, event):
-        """ Permite arrastrar la ventana """
+        """ Maneja el cambio de tamaño o la posición de la ventana """
+        # Si se está redimensionando
+        if self._is_resizing:
+            global_pos = event.globalPosition().toPoint()
+            diff = global_pos - self._drag_pos
+            self._drag_pos = global_pos
+            
+            geo = self.geometry()
+            if "left" in self._resize_edge:
+                geo.setLeft(geo.left() + diff.x())
+            if "right" in self._resize_edge:
+                geo.setRight(geo.right() + diff.x())
+            if "top" in self._resize_edge:
+                geo.setTop(geo.top() + diff.y())
+            if "bottom" in self._resize_edge:
+                geo.setBottom(geo.bottom() + diff.y())
+                
+            self.setGeometry(geo)
+            event.accept()
+            return
+
+        # Si se está arrastrando la ventana normalmente
         if event.buttons() == Qt.MouseButton.LeftButton and not self._drag_pos.isNull():
             self.move(event.globalPosition().toPoint() - self._drag_pos)
             event.accept()
+
+
+    def mouseReleaseEvent(self, event):
+        """ Restablece estados al soltar el clic """
+        self._is_resizing = False
+        self._resize_edge = None
+        super().mouseReleaseEvent(event)
 
 
     def keyPressEvent(self, event):
@@ -676,4 +746,18 @@ class ChatWindow(QWidget):
         super().showEvent(event)
         self.input_field.setFocus()
         self.activateWindow()
+
+
+    def resizeEvent(self, event):
+        """ Detecta cuando el usuario redimensiona la ventana y guarda los valores """
+        super().resizeEvent(event)
+        if self.cfg:
+            self.cfg.set_chat_geometry(self.width(), self.height())
+
+
+    def closeEvent(self, event):
+        """ Asegura guardar el tamaño final justo antes de ocultar o cerrar """
+        if self.cfg:
+            self.cfg.set_chat_geometry(self.width(), self.height())
+        super().closeEvent(event)
         

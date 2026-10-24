@@ -37,6 +37,10 @@ class ConfigManager:
 
         self.mute_sounds = self.global_config.get("MUTE_SOUNDS", "false").lower() == "true"
         self.hide_avatar = self.global_config.get("HIDE_AVATAR", "false").lower() == "true"
+
+        # Leer dimensiones guardadas del chat (por defecto 350x480 si no existen)
+        self.chat_width = int(self.global_config.get("CHAT_WIDTH", 350))
+        self.chat_height = int(self.global_config.get("CHAT_HEIGHT", 480))
         
         # Verificar si el archivo .env existe físicamente
         self.has_env_file = os.path.exists(self.env_path)
@@ -147,6 +151,14 @@ class ConfigManager:
             set_key(self.env_path, "GROQ_API_KEY", f"'{api_key}'")
             
         self.has_env_file = True
+
+
+    def set_chat_geometry(self, width: int, height: int):
+        """ Guarda el ancho y alto del chat en el archivo de configuración global """
+        self.chat_width = width
+        self.chat_height = height
+        self._update_global_config_key("CHAT_WIDTH", str(width))
+        self._update_global_config_key("CHAT_HEIGHT", str(height))
 
 
 def load_sleep_time():
