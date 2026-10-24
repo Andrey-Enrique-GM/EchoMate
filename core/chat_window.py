@@ -4,7 +4,7 @@ import re
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QTextEdit, QPushButton, QFrame, QLineEdit, QStackedWidget,
-    QCheckBox
+    QCheckBox, QScrollArea
 )
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QPixmap
@@ -135,11 +135,34 @@ class ChatWindow(QWidget):
             }
 
             /* Historial */
-            #chat_history {
+            #chat_scroll {
                 background-color: #161922;
                 border: none;
-                padding: 10px;
-                line-height: 1.4;
+            }
+            #chat_content {
+                background-color: #161922;
+            }
+            
+            /* Estilos de las Burbujas de Chat */
+            .user_bubble {
+                background-color: #1E40AF;
+                color: #FFFFFF;
+                border-radius: 8px;
+                padding: 8px 12px;
+            }
+            .bot_bubble {
+                background-color: #242938;
+                border: 1px solid #2D3446;
+                color: #DCE2EE;
+                border-radius: 8px;
+                padding: 8px 12px;
+            }
+            .bot_name_label {
+                color: #FF5C93;
+                font-weight: 600;
+                font-size: 11px;
+                margin-bottom: 3px;
+                margin-left: 4px;
             }
             
             QScrollBar:vertical {
@@ -307,11 +330,21 @@ class ChatWindow(QWidget):
         chat_layout.setContentsMargins(0, 0, 0, 0)
         chat_layout.setSpacing(8)
 
-        self.chat_history = QTextEdit()
-        self.chat_history.setObjectName("chat_history")
-        self.chat_history.setReadOnly(True)
-        self.chat_history.setPlaceholderText("Comienza a hablar con tu asistente...")
-        chat_layout.addWidget(self.chat_history)
+        # Historial cambiado a QScrollArea para permitir bordes redondeados
+        self.chat_scroll = QScrollArea()
+        self.chat_scroll.setObjectName("chat_scroll")
+        self.chat_scroll.setWidgetResizable(True)
+        self.chat_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        self.chat_content = QWidget()
+        self.chat_content.setObjectName("chat_content")
+        self.chat_layout_inner = QVBoxLayout(self.chat_content)
+        self.chat_layout_inner.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.chat_layout_inner.setContentsMargins(10, 10, 10, 10)
+        self.chat_layout_inner.setSpacing(10)
+
+        self.chat_scroll.setWidget(self.chat_content)
+        chat_layout.addWidget(self.chat_scroll)
 
         input_container = QWidget()
         input_layout = QHBoxLayout(input_container)
@@ -430,7 +463,13 @@ class ChatWindow(QWidget):
         """ Limpia la memoria del chat """
         if self.groq_engine:
             self.groq_engine.clear_history()
-        self.chat_history.clear()
+        
+        # Limpiar widgets del contenedor de chat
+        while self.chat_layout_inner.count():
+            item = self.chat_layout_inner.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+                
         self.stack.setCurrentIndex(0)
         char_name = self.parent_window.character.name if self.parent_window else "EchoMate"
         self.add_bot_response(char_name, "¡Memoria del chat borrada! ¿De qué quieres hablar ahora?")
@@ -491,22 +530,16 @@ class ChatWindow(QWidget):
         formatted_user_text = parse_markdown_to_html(text)
         
         # Burbuja del USUARIO (Derecha)
-        user_bubble_html = f'''
-        <table width="100%" style="margin-bottom: 12px;" cellspacing="0" cellpadding="0">
-            <tr>
-                <td align="right">
-                    <table cellspacing="0" cellpadding="0" style="max-width: 80%;">
-                        <tr>
-                            <td style="background-color: #1E40AF; color: #FFFFFF; padding: 8px 12px; border-radius: 8px; text-align: left;">
-                                {formatted_user_text}
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
-        self.chat_history.append(user_bubble_html)
+        row_layout = QHBoxLayout()
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.addStretch()
+
+        bubble = QLabel(formatted_user_text)
+        bubble.setProperty("class", "user_bubble")
+        bubble.setWordWrap(True)
+        row_layout.addWidget(bubble)
+
+        self.chat_layout_inner.addLayout(row_layout)
         
         self.input_field.clear()
         self.input_field.adjust_input_height()
@@ -539,25 +572,27 @@ class ChatWindow(QWidget):
         formatted_bot_text = parse_markdown_to_html(text)
         
         # Burbuja del PERSONAJE (Izquierda)
-        bot_bubble_html = f'''
-        <table width="100%" style="margin-bottom: 12px;" cellspacing="0" cellpadding="0">
-            <tr>
-                <td align="left">
-                    <div style="color: #FF5C93; font-weight: 600; font-size: 11px; margin-bottom: 3px; margin-left: 4px;">
-                        {character_name}
-                    </div>
-                    <table cellspacing="0" cellpadding="0" style="max-width: 85%;">
-                        <tr>
-                            <td style="background-color: #242938; border: 1px solid #2D3446; color: #DCE2EE; padding: 8px 12px; border-radius: 8px; text-align: left;">
-                                {formatted_bot_text}
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        '''
-        self.chat_history.append(bot_bubble_html)
+        container_widget = QWidget()
+        v_layout = QVBoxLayout(container_widget)
+        v_layout.setContentsMargins(0, 0, 0, 0)
+        v_layout.setSpacing(2)
+
+        name_lbl = QLabel(character_name)
+        name_lbl.setProperty("class", "bot_name_label")
+        
+        bubble = QLabel(formatted_bot_text)
+        bubble.setProperty("class", "bot_bubble")
+        bubble.setWordWrap(True)
+
+        v_layout.addWidget(name_lbl)
+        v_layout.addWidget(bubble)
+
+        row_layout = QHBoxLayout()
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.addWidget(container_widget)
+        row_layout.addStretch()
+
+        self.chat_layout_inner.addLayout(row_layout)
 
 
     def update_position(self):
@@ -598,3 +633,4 @@ class ChatWindow(QWidget):
         super().showEvent(event)
         self.input_field.setFocus()
         self.activateWindow()
+        
