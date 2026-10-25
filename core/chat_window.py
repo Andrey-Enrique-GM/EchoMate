@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QTextEdit, QPushButton, QFrame, QLineEdit, QStackedWidget,
     QCheckBox, QScrollArea
 )
-from PyQt6.QtCore import Qt, QPoint, pyqtSignal
+from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QTimer
 from PyQt6.QtGui import QPixmap
 
 
@@ -562,19 +562,44 @@ class ChatWindow(QWidget):
 
 
     def clear_chat_context(self):
-        """ Limpia la memoria del chat """
+        """ Limpia la memoria del chat y purga visualmente todos los elementos """
+        # Limpiar la memoria de la IA
         if self.groq_engine:
             self.groq_engine.clear_history()
         
-        # Limpiar widgets del contenedor de chat
+        # Elimina todos los widgets y layouts hijos del scroll area
         while self.chat_layout_inner.count():
             item = self.chat_layout_inner.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            if item is not None:
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                else:
+                    # Si es un sub-layout (como el QHBoxLayout de las burbujas), limpiarlo también en cascada
+                    sub_layout = item.layout()
+                    if sub_layout is not None:
+                        while sub_layout.count():
+                            sub_item = sub_layout.takeAt(0)
+                            if sub_item.widget():
+                                sub_item.widget().deleteLater()
                 
+        # Vuelve a la pantalla de chat por si estaba en ajustes
         self.stack.setCurrentIndex(0)
+
+        # Muestra el mensaje de bienvenida inicial limpio
         char_name = self.parent_window.character.name if self.parent_window else "EchoMate"
-        self.add_bot_response(char_name, "¡Memoria del chat borrada! ¿De qué quieres hablar ahora?")
+        self.add_bot_response(char_name, "Memoria del chat borrada. ¿De qué quieres hablar ahora?")
+
+    
+    def scroll_to_bottom(self):
+        """ Desplaza automáticamente el historial de chat completamente hacia abajo """
+        def _do_scroll():
+            scrollbar = self.chat_scroll.verticalScrollBar()
+            if scrollbar:
+                scrollbar.setValue(scrollbar.maximum())
+
+        # Un pequeño retraso de 50ms permite que el motor de renderizado calcule las alturas reales de los textos
+        QTimer.singleShot(50, _do_scroll)
 
 
     def save_api_key(self):
@@ -679,6 +704,9 @@ class ChatWindow(QWidget):
             response = self.groq_engine.get_response(text, character_name=char_name)
             self.add_bot_response(char_name, response)
 
+        # Desplaza el chat hacia abajo para mostrar el nuevo mensaje
+        self.scroll_to_bottom()
+
 
     def add_bot_response(self, character_name, text):
         """ Convierte la respuesta Markdown a HTML y la renderiza """
@@ -706,6 +734,9 @@ class ChatWindow(QWidget):
         row_layout.addStretch()
 
         self.chat_layout_inner.addLayout(row_layout)
+
+        # Desplaza el chat hacia abajo para mostrar el nuevo mensaje
+        self.scroll_to_bottom()
 
 
     def update_position(self):
