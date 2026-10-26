@@ -4,9 +4,11 @@
 
 ---
 
-[![Descargar Ejecutable](https://img.shields.io/badge/Descargar-EchoMate_v1.0_(Windows)-58A3D5?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Andrey-Enrique-GM/EchoMate/releases/download/v1.0.0/EchoMate_v1.0.zip)
+[![Descargar Ejecutable](https://img.shields.io/badge/Descargar-EchoMate_v1.0_(Windows)-78BDEB?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Andrey-Enrique-GM/EchoMate/releases/download/v1.0.0/EchoMate_v1.0.zip)
 
-[![Descargar Ejecutable](https://img.shields.io/badge/Descargar-EchoMate_v1.5_(Windows)-2A84BF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Andrey-Enrique-GM/EchoMate/releases/download/v1.5.0/EchoMate_v1.5.zip)
+[![Descargar Ejecutable](https://img.shields.io/badge/Descargar-EchoMate_v1.5_(Windows)-58A3D5?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Andrey-Enrique-GM/EchoMate/releases/download/v1.5.0/EchoMate_v1.5.zip)
+
+[![Descargar Ejecutable](https://img.shields.io/badge/Descargar-EchoMate_v2.4_(Windows)-2A84BF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Andrey-Enrique-GM/EchoMate/releases/download/v2.4.0/EchoMate_v2.4.zip)
 
 ---
 
