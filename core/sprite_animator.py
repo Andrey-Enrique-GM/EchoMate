@@ -17,18 +17,31 @@ class SpriteAnimator:
 
 
     def get_frame_at(self, frame_idx: int) -> QPixmap:
-        """Obtiene un frame específico de la hoja sin alterar el contador interno."""
+        """Obtiene un frame específico de la hoja calculando el ancho real según la imagen y los frames."""
         if self.full_pixmap.isNull():
             return QPixmap()
 
         frame_to_render = frame_idx % self.total_frames
-        col = frame_to_render % self.columns
-        row = frame_to_render // self.columns
+        
+        # --- CALCULO DINÁMICO DE ANCHO DE FRAME ---
+        # Si la imagen es una tira horizontal, determina el ancho real de cada frame 
+        # dividiendo el ancho total de la imagen entre el total de frames de esta animación.
+        is_horizontal = self.columns <= 1 and self.full_pixmap.width() > self.frame_width
+        
+        if is_horizontal and self.total_frames > 0:
+            actual_frame_width = self.full_pixmap.width() // self.total_frames
+            effective_columns = self.total_frames
+        else:
+            actual_frame_width = self.frame_width
+            effective_columns = self.columns
 
-        x = col * self.frame_width
+        col = frame_to_render % effective_columns
+        row = frame_to_render // effective_columns
+
+        x = col * actual_frame_width
         y = row * self.frame_height
 
-        return self.full_pixmap.copy(QRect(x, y, self.frame_width, self.frame_height))
+        return self.full_pixmap.copy(QRect(x, y, actual_frame_width, self.frame_height))
 
 
     def get_next_frame(self) -> QPixmap:
