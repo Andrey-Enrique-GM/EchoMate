@@ -372,6 +372,7 @@ class ChatWindow(QWidget):
             "mambo": "¿Qué tienes en mente?",
             "tachyon": "¿Qué experimento analizamos hoy?",
             "cafe": "¿Un café para charlar...?",
+            "capri": "¿Qué hackeamos o de qué hablamos hoy, choomba?",
         }
         default_msg = "Comienza a hablar con tu asistente..."
         
@@ -394,6 +395,7 @@ class ChatWindow(QWidget):
             "mambo": "Escríbeme algo sin prisa...",
             "tachyon": "Escríbeme algo interesante...",
             "cafe": "Escríbeme despacio...",
+            "capri": "Escribe tu línea en el net...",
         }
         default_msg = "Escribe aquí..."
         
