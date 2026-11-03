@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QTimer
 from PyQt6.QtGui import QPixmap
+from core.actions import run_system_command
 
 
 
@@ -657,7 +658,7 @@ class ChatWindow(QWidget):
 
 
     def send_message(self):
-        """ Envía el mensaje ingresado por el usuario """
+        """ Envía el mensaje ingresado por el usuario y procesa posibles comandos del sistema """
         text = self.input_field.toPlainText().strip()
         if not text:
             return
@@ -702,9 +703,32 @@ class ChatWindow(QWidget):
             )
             self.add_bot_response(char_name, tutorial_msg)
         else:
-            # Procesa la respuesta con Groq
-            response = self.groq_engine.get_response(text, character_name=char_name)
-            self.add_bot_response(char_name, response)
+            # Obtiene la respuesta de Groq
+            raw_response = self.groq_engine.get_response(text, character_name=char_name)
+            
+            # Intercepta comandos del sistema [CMD:...]
+            command_match = re.search(r'\[CMD:(.*?)\]', raw_response)
+            
+            # Limpia la etiqueta de la respuesta
+            clean_response = re.sub(r'\[CMD:.*?\]', '', raw_response).strip()
+            
+            if command_match:
+                action_name = command_match.group(1).strip()
+                
+                # Si es get_time, obteniene la hora de una vez
+                if action_name == "get_time":
+                    time_feedback = run_system_command(action_name)
+                    final_response = f"{clean_response} {time_feedback}"
+                    self.add_bot_response(char_name, final_response)
+                else:
+                    final_response = f"{clean_response}\n\n*(⚡ Comando ejecutado: `{action_name}`)*"
+                    self.add_bot_response(char_name, final_response)
+                    
+                    # Ejecutaa la acción del sistema mediante QTimer de forma segura
+                    QTimer.singleShot(100, lambda: run_system_command(action_name))
+            else:
+                final_response = raw_response
+                self.add_bot_response(char_name, final_response)
 
         # Desplaza el chat hacia abajo para mostrar el nuevo mensaje
         self.scroll_to_bottom()
