@@ -62,6 +62,7 @@ def switch_character(app, new_char_name):
     # Actualizar la referencia del parent en chat_win si ya existe
     if chat_win:
         chat_win.parent_window = window
+        chat_win.clear_chat_context()
 
     # Actualizar icono y tooltip en la barra de tareas
     update_tray_icon(character)

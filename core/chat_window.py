@@ -578,7 +578,6 @@ class ChatWindow(QWidget):
                 if widget is not None:
                     widget.deleteLater()
                 else:
-                    # Si es un sub-layout (como el QHBoxLayout de las burbujas), limpiarlo también en cascada
                     sub_layout = item.layout()
                     if sub_layout is not None:
                         while sub_layout.count():
@@ -589,9 +588,23 @@ class ChatWindow(QWidget):
         # Vuelve a la pantalla de chat por si estaba en ajustes
         self.stack.setCurrentIndex(0)
 
-        # Muestra el mensaje de bienvenida inicial limpio
-        char_name = self.parent_window.character.name if self.parent_window else "EchoMate"
-        self.add_bot_response(char_name, "Memoria del chat borrada. ¿De qué quieres hablar ahora?")
+        # Mensajes dinámicos según el personaje activo
+        char_key = self.parent_window.character.name.lower() if (self.parent_window and hasattr(self.parent_window, 'character')) else "char"
+        char_name = self.parent_window.character.name if (self.parent_window and hasattr(self.parent_window, 'character')) else "EchoMate"
+
+        placeholders = {
+            "goldship": "¿Qué caos armamos hoy, humano?",
+            "mambo": "¿Qué tienes en mente?",
+            "tachyon": "¿Qué experimento analizamos hoy?",
+            "cafe": "¿Un café para charlar...?",
+            "capri": "¿Qué hackeamos o de qué hablamos hoy, choomba?",
+        }
+        
+        # Selecciona el mensaje personalizado o uno por defecto
+        welcome_msg = placeholders.get(char_key, "Comienza a hablar con tu asistente...")
+
+        # Muestra el mensaje de bienvenida limpio del nuevo personaje
+        self.add_bot_response(char_name, welcome_msg)
 
     
     def scroll_to_bottom(self):
@@ -678,6 +691,7 @@ class ChatWindow(QWidget):
         bubble = QLabel(formatted_user_text)
         bubble.setProperty("class", "user_bubble")
         bubble.setWordWrap(True)
+        bubble.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         row_layout.addWidget(bubble)
 
         self.chat_layout_inner.addLayout(row_layout)
@@ -750,6 +764,7 @@ class ChatWindow(QWidget):
         bubble = QLabel(formatted_bot_text)
         bubble.setProperty("class", "bot_bubble")
         bubble.setWordWrap(True)
+        bubble.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         v_layout.addWidget(name_lbl)
         v_layout.addWidget(bubble)

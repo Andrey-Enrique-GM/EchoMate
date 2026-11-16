@@ -1,5 +1,5 @@
 ﻿#-- Character Settings --
-START_CHAR=GoldShip
+START_CHAR=Capri
 
 #-- Visual & Effects Settings --
 SPRITE_FRAMERATE=60
