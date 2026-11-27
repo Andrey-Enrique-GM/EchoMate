@@ -56,6 +56,7 @@ def switch_character(app, new_char_name):
     # Instanciar el nuevo personaje
     character = Character(character_name=new_char_name)
     window = PetWindow(character, config_manager=cfg)
+    window.toggle_chat_requested.connect(toggle_chat)
     if not cfg.hide_avatar:
         window.show()
 
@@ -151,6 +152,7 @@ def main():
     groq_engine = GroqEngine(api_key=cfg.groq_api_key)
     
     window = PetWindow(character, config_manager=cfg)
+    window.toggle_chat_requested.connect(toggle_chat)
     if not cfg.hide_avatar:
         window.show()
 
