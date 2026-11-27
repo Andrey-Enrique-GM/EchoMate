@@ -389,6 +389,7 @@ class ChatWindow(QWidget):
         input_layout.setSpacing(8)
 
         self.input_field = MessageInputEdit(parent_chat=self)
+        self.update_input_placeholder()
         
         # Inputs dinámicos según el personaje activo
         input_field_placeholders = {
@@ -552,6 +553,10 @@ class ChatWindow(QWidget):
         if event.key() == Qt.Key.Key_Escape:
             self.hide()
             event.accept()
+        elif (event.key() == Qt.Key.Key_Space and 
+              (event.modifiers() & Qt.KeyboardModifier.ControlModifier)):
+            self.hide()
+            event.accept()
         else:
             super().keyPressEvent(event)
 
@@ -602,6 +607,9 @@ class ChatWindow(QWidget):
         
         # Selecciona el mensaje personalizado o uno por defecto
         welcome_msg = placeholders.get(char_key, "Comienza a hablar con tu asistente...")
+
+        # Actualiza el placeholder de la barra de escritura
+        self.update_input_placeholder()
 
         # Muestra el mensaje de bienvenida limpio del nuevo personaje
         self.add_bot_response(char_name, welcome_msg)
@@ -778,6 +786,26 @@ class ChatWindow(QWidget):
 
         # Desplaza el chat hacia abajo para mostrar el nuevo mensaje
         self.scroll_to_bottom()
+
+
+    def update_input_placeholder(self):
+        """ Actualiza el placeholder de la barra de escritura según el personaje activo """
+        char_key = (
+            self.parent_window.character.name.lower()
+            if (self.parent_window and hasattr(self.parent_window, 'character'))
+            else "echomate"
+        )
+
+        input_placeholders = {
+            "goldship": "Escríbeme algo divertido...",
+            "mambo": "Escríbeme algo sin prisa...",
+            "tachyon": "Escríbeme algo interesante...",
+            "cafe": "Escríbeme despacio...",
+            "capri": "Escribe tu línea en el net...",
+        }
+
+        default_text = "Escribe aquí..."
+        self.input_field.setPlaceholderText(input_placeholders.get(char_key, default_text))
 
 
     def update_position(self):

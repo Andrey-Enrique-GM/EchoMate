@@ -1,6 +1,6 @@
 import math
 from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QApplication
-from PyQt6.QtCore import Qt, QTimer, QPoint
+from PyQt6.QtCore import Qt, QTimer, QPoint, pyqtSignal
 from PyQt6.QtGui import QCursor
 from config import load_sleep_time
 from core.sprite_animator import SpriteAnimator
@@ -11,7 +11,11 @@ from core.sound_manager import SoundManager
 
 
 class PetWindow(QWidget):
-    def __init__(self, character: Character, target_size: int = 230, fps: int = 35, config_manager=None):
+  
+    # Señal para pedir a app.py que abra/cierre el chat
+    toggle_chat_requested = pyqtSignal()
+
+    def __init__(self, character: Character, config_manager=None, target_size: int = 230, fps: int = 35):
         super().__init__()
 
         self.character = character
@@ -89,6 +93,9 @@ class PetWindow(QWidget):
         self.is_dragging = False
         self.has_dragged = False
         self.drag_offset = QPoint()
+
+        # Permite que la ventana del personaje reciba foco de teclado al hacer clic
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
 
     def reset_inactivity_timer(self):
@@ -243,6 +250,11 @@ class PetWindow(QWidget):
 
     def mousePressEvent(self, event):
         """ Maneja el clic izquierdo y el clic derecho """
+
+        # Toma el foco de teclado al interactuar con el personaje
+        self.activateWindow()
+        self.setFocus()
+
         self.reset_inactivity_timer() # Reinicia el contador con clic
         if self.current_state in ["intro", "outro"]:
             return
@@ -257,6 +269,16 @@ class PetWindow(QWidget):
         elif event.button() == Qt.MouseButton.RightButton:
             self.set_state("click")
             event.accept()
+
+
+    def keyPressEvent(self, event):
+        """ Si el personaje tiene el foco y presionas Ctrl + Space, abre/cierra el chat """
+        if (event.key() == Qt.Key.Key_Space and 
+            (event.modifiers() & Qt.KeyboardModifier.ControlModifier)):
+            self.toggle_chat_requested.emit()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
 
 
     def mouseMoveEvent(self, event):
